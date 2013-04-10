@@ -892,6 +892,52 @@ class TestDMEnd2End(IonIntegrationTestCase):
         cov = DatasetManagementService._get_simplex_coverage(dataset_id=dataset_id)
         self.assertIsInstance(cov, SimplexCoverage)
 
+    def test_all_parameter_contexts(self):
+        ph = ParameterHelper(self.dataset_management, self.addCleanup)
+        pdict_id = ph.create_all_params()
+
+        stream_def_id = self.pubsub_management.create_stream_definition('all_contexts', parameter_dictionary_id=pdict_id)
+        self.addCleanup(self.pubsub_management.delete_stream_definition, stream_def_id)
+
+        stream_id, route = self.pubsub_management.create_stream('example', exchange_point=self.exchange_point_name, stream_definition_id=stream_def_id)
+        self.addCleanup(self.pubsub_management.delete_stream, stream_id)
+
+        dataset_id = self.create_dataset(pdict_id)
+
+        size = 20
+
+        publisher = StandaloneStreamPublisher(stream_id, route)
+        rdt = RecordDictionaryTool(stream_definition_id=stream_def_id)
+        rdt['time'] = np.arange(size)
+        rdt['array_type'] = [[i for i in xrange(3)] for j in xrange(size)]
+        rdt['boolean_type'] = [False for i in xrange(size)]
+        #rdt['category_range_type'] =
+        rdt['category_type'] = ['port_timestamp'] * size
+        rdt['constant_range_type'] = [(12.8, 55.2)] * size
+        rdt['constant_type'] = [45] * size
+        rdt['count_range_type'] = [1] * size
+        rdt['count_type'] = [2] * size
+        #rdt['function_type'] =
+        #rdt['parameter_function_type'] =
+        rdt['quantity_range_type'] = [3] * size
+        rdt['quantity_type'] = [i for i in xrange(size)]
+        rdt['record_type'] = [{'record': 'ok'}] * size
+        rdt['reference_type'] = [4] * size
+        rdt['sparse_constant_type'] = [5] * size
+        #rdt['text_type'] = [6.5] * size        ---> raises "could not convert string to float" error when setting the value
+        rdt['time_range_type'] = [7] * size
+        rdt['time_type'] = [8] * size
+        rdt['vector_type'] = [9] * size
+
+        dataset_monitor = DatasetMonitor(dataset_id)
+        self.addCleanup(dataset_monitor.stop)
+
+        publisher.publish(rdt.to_granule())
+        self.assertTrue(dataset_monitor.event.wait(30))   # ---> Event never gets set, so granule isn't getting sent?
+
+        replay_granule = self.data_retriever.retrieve(dataset_id)
+        rdt_out = RecordDictionaryTool.load_from_granule(replay_granule)
+
 class DatasetMonitor(object):
     def __init__(self, dataset_id):
         self.dataset_id = dataset_id

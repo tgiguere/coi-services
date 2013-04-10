@@ -5,6 +5,7 @@
 @brief Helpers for Parameters
 '''
 from coverage_model import ParameterContext, QuantityType, AxisTypeEnum, ArrayType, CategoryType, ConstantType, NumexprFunction, ParameterFunctionType, VariabilityEnum, PythonFunction, SparseConstantType
+from coverage_model import BooleanType, CategoryRangeType, ConstantRangeType, CountRangeType, CountType, FunctionType, QuantityRangeType, RecordType, ReferenceType, TextType, TimeRangeType, TimeType, VectorType
 from ion.services.dm.utility.granule import RecordDictionaryTool
 import time
 import numpy as np
@@ -101,10 +102,10 @@ class ParameterHelper(object):
 
 
     def create_parsed_params(self):
-        
         contexts = {}
         funcs = {}
-        
+
+
 
         t_ctxt = ParameterContext('time', param_type=QuantityType(value_encoding=np.dtype('float64')))
         t_ctxt.uom = 'seconds since 1900-01-01'
@@ -405,5 +406,138 @@ class ParameterHelper(object):
         calibrated_b_id = self.dataset_management.create_parameter_context(name='calibrated_b', parameter_context=calibrated_b.dump())
         self.addCleanup(self.dataset_management.delete_parameter_context, calibrated_b_id)
         contexts['calibrated_b'] = calibrated_b, calibrated_b_id
+
+        return contexts
+
+    def create_all_params(self):
+        contexts = self.create_all_param_contexts()
+        context_ids = [i[1] for i in contexts.itervalues()]
+
+        all_pdict_id = self.dataset_management.create_parameter_dictionary('all_params', parameter_context_ids=context_ids, temporal_context='time')
+        self.addCleanup(self.dataset_management.delete_parameter_dictionary, all_pdict_id)
+        return all_pdict_id
+
+    def create_all_param_contexts(self):
+        contexts = {}
+        t_ctxt = ParameterContext('time', param_type=QuantityType(value_encoding=np.dtype('float64')))
+        t_ctxt.uom = 'seconds since 1900-01-01'
+        t_ctxt_id = self.dataset_management.create_parameter_context(name='time', parameter_context=t_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, t_ctxt_id)
+        contexts['time'] = (t_ctxt, t_ctxt_id)
+
+        at_ctxt = ParameterContext('array_type', param_type=ArrayType())
+        at_ctxt.uom = 'unknown'
+        at_ctxt_id = self.dataset_management.create_parameter_context(name='array_type', parameter_context=at_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, at_ctxt_id)
+        contexts['array_type'] = (at_ctxt, at_ctxt_id)
+
+        bt_ctxt = ParameterContext('boolean_type', param_type=BooleanType())
+        bt_ctxt_id = self.dataset_management.create_parameter_context(name='boolean_type', parameter_context=bt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, bt_ctxt_id)
+        contexts['boolean_type'] = (bt_ctxt, bt_ctxt_id)
+
+        cart_ctxt = ParameterContext('category_range_type', param_type=CategoryRangeType())
+        cart_ctxt.uom = 'unknown'
+        cart_ctxt_id = self.dataset_management.create_parameter_context(name='category_range_type', parameter_context=cart_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, cart_ctxt_id)
+        contexts['category_range_type'] = (cart_ctxt, cart_ctxt_id)
+
+        categories = {0:'port_timestamp', 1:'driver_timestamp', 2:'internal_timestamp', 3:'time', -99:'empty'}
+        cat_ctxt = ParameterContext('category_type', param_type=CategoryType(categories=categories))
+        cat_ctxt.uom = 'unknown'
+        cat_ctxt_id = self.dataset_management.create_parameter_context(name='category_type', parameter_context=cat_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, cat_ctxt_id)
+        contexts['category_type'] = (cat_ctxt, cat_ctxt_id)
+
+        cort_ctxt = ParameterContext('constant_range_type', param_type=ConstantRangeType())
+        cort_ctxt.uom = 'unknown'
+        cort_ctxt_id = self.dataset_management.create_parameter_context(name='constant_range_type', parameter_context=cort_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, cort_ctxt_id)
+        contexts['constant_range_type'] = (cort_ctxt, cort_ctxt_id)
+
+        cot_ctxt = ParameterContext('constant_type', param_type=ConstantType(QuantityType(value_encoding=np.dtype('int32'))), variability=VariabilityEnum.NONE)
+        cot_ctxt.uom = 'unknown'
+        cot_ctxt_id = self.dataset_management.create_parameter_context(name='constant_type', parameter_context=cot_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, cot_ctxt_id)
+        contexts['constant_type'] = (cot_ctxt, cot_ctxt_id)
+
+        crt_ctxt = ParameterContext('count_range_type', param_type=CountRangeType())
+        crt_ctxt.uom = 'unknown'
+        crt_ctxt_id = self.dataset_management.create_parameter_context(name='count_range_type', parameter_context=crt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, crt_ctxt_id)
+        contexts['count_range_type'] = (crt_ctxt, crt_ctxt_id)
+
+        cot_ctxt = ParameterContext('count_type', param_type=CountType())
+        cot_ctxt.uom = 'unknown'
+        cot_ctxt_id = self.dataset_management.create_parameter_context(name='category_type', parameter_context=cot_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, cot_ctxt_id)
+        contexts['count_type'] = (cot_ctxt, cot_ctxt_id)
+
+        # ft_ctxt = ParameterContext('function_type', param_type=FunctionType(QuantityType(value_encoding=np.dtype('float32'))))
+        # ft_ctxt.uom = 'unknown'
+        # ft_ctxt_id = self.dataset_management.create_parameter_context(name='function_type', parameter_context=ft_ctxt.dump())
+        # self.addCleanup(self.dataset_management.delete_parameter_context, ft_ctxt_id)
+        # contexts['function_type'] = (ft_ctxt, ft_ctxt_id)
+
+        func = NumexprFunction('numexpr_func', expression='q*10', arg_list=['q'], param_map={'q':'quantity'})
+        pft_ctxt = ParameterContext('parameter_function_type', param_type=ParameterFunctionType(function=func))
+        pft_ctxt.uom = 'unknown'
+        pft_ctxt_id = self.dataset_management.create_parameter_context(name='parameter_function_type', parameter_context=pft_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, pft_ctxt_id)
+        contexts['parameter_function_type'] = (pft_ctxt, pft_ctxt_id)
+
+        qrt_ctxt = ParameterContext('quantity_range_type', param_type=QuantityRangeType())
+        qrt_ctxt.uom = 'unknown'
+        qrt_ctxt_id = self.dataset_management.create_parameter_context(name='quantity_range_type', parameter_context=qrt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, qrt_ctxt_id)
+        contexts['quantity_range_type'] = (qrt_ctxt, qrt_ctxt_id)
+
+        qt_ctxt = ParameterContext('quantity_type', param_type=QuantityType(value_encoding=np.dtype('float32')), fill_value=-9999)
+        qt_ctxt.uom = 'unknown'
+        qt_ctxt_id = self.dataset_management.create_parameter_context(name='quantity_type', parameter_context=qt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, qt_ctxt_id)
+        contexts['quantity_type'] = (qt_ctxt, qt_ctxt_id)
+
+        rt_ctxt = ParameterContext('record_type', param_type=RecordType())
+        rt_ctxt.uom = 'unknown'
+        rt_ctxt_id = self.dataset_management.create_parameter_context(name='record_type', parameter_context=rt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, rt_ctxt_id)
+        contexts['record_type'] = (rt_ctxt, rt_ctxt_id)
+
+        reft_ctxt = ParameterContext('reference_type', param_type=ReferenceType())
+        reft_ctxt.uom = 'unknown'
+        reft_ctxt_id = self.dataset_management.create_parameter_context(name='reference_type', parameter_context=reft_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, reft_ctxt_id)
+        contexts['reference_type'] = (reft_ctxt, reft_ctxt_id)
+
+        sct_ctxt = ParameterContext('sparse_constant_type', param_type=SparseConstantType(base_type=ConstantType(value_encoding='float64'), fill_value=-9999.))
+        sct_ctxt.uom = 'unknown'
+        sct_ctxt_id = self.dataset_management.create_parameter_context(name='sparse_constant_type', parameter_context=sct_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, sct_ctxt_id)
+        contexts['sparse_constant_type'] = (sct_ctxt, sct_ctxt_id)
+
+        tt_ctxt = ParameterContext('text_type', param_type=TextType())
+        tt_ctxt.uom = 'unknown'
+        tt_ctxt_id = self.dataset_management.create_parameter_context(name='text_type', parameter_context=tt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, tt_ctxt_id)
+        contexts['text_type'] = (tt_ctxt, tt_ctxt_id)
+
+        trt_ctxt = ParameterContext('time_range_type', param_type=TimeRangeType())
+        trt_ctxt.uom = 'unknown'
+        trt_ctxt_id = self.dataset_management.create_parameter_context(name='time_range_type', parameter_context=trt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, trt_ctxt_id)
+        contexts['time_range_type'] = (trt_ctxt, trt_ctxt_id)
+
+        timet_ctxt = ParameterContext('time_type', param_type=TimeType())
+        timet_ctxt.uom = 'unknown'
+        timet_ctxt_id = self.dataset_management.create_parameter_context(name='time_type', parameter_context=timet_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, timet_ctxt_id)
+        contexts['time_type'] = (timet_ctxt, timet_ctxt_id)
+
+        vt_ctxt = ParameterContext('vector_type', param_type=VectorType())
+        vt_ctxt.uom = 'unknown'
+        vt_ctxt_id = self.dataset_management.create_parameter_context(name='vector_type', parameter_context=vt_ctxt.dump())
+        self.addCleanup(self.dataset_management.delete_parameter_context, vt_ctxt_id)
+        contexts['vector_type'] = (vt_ctxt, vt_ctxt_id)
 
         return contexts
